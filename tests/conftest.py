@@ -8,8 +8,28 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models import Task, TaskCategory, TaskPriority
 from app.settings import settings
+from tests.plugins.reporter import JsonReportingPlugin
 
+JSON_OUTPUT_FLAG = "--json-report"
+DEFAULT_FILE = "test_results.json"
 TEST_DB_FILE = "test_tasks.json"
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Adds the command line flag to specify the output file."""
+    parser.addoption(
+        JSON_OUTPUT_FLAG,
+        action="store",
+        default=DEFAULT_FILE,
+        help="Path to the JSON report file path where test results will be saved",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Registers the plugin instance with the config."""
+    report_path = config.getoption(JSON_OUTPUT_FLAG)
+    if not hasattr(config, "workerinput"):
+        config.pluginmanager.register(JsonReportingPlugin(report_path))
 
 
 @pytest.fixture(autouse=True)
